@@ -158,6 +158,23 @@ make_image() {
     rm -f $image_mnt/etc/resolv.conf
     echo "nameserver 1.1.1.1" > $image_mnt/etc/resolv.conf
 
+    # --- Custom pipa kernel swap-in (pmOS patch stack rebased onto vanilla) ---
+    # Pulled in from COPR via pipa-metapkg by default. Replace it with our own
+    # RPM before dracut/kernel-install run, so only one kernel dir exists under
+    # /usr/lib/modules when build.sh scans for it below.
+    if [ -n "${CUSTOM_KERNEL_RPM:-}" ]; then
+        echo '### Removing COPR-provided kernel'
+        # TODO: confirm the actual installed package name -- pipa-metapkg pulls
+        # it in transitively via COPR, verify with:
+        #   arch-chroot $image_mnt rpm -qa | grep -i kernel
+        arch-chroot $image_mnt rpm -e --nodeps kernel-xiaomi-pipa 2>&1 || true
+
+        echo '### Installing custom kernel RPM'
+        cp "$CUSTOM_KERNEL_RPM" "$image_mnt/tmp/custom-kernel.rpm"
+        arch-chroot $image_mnt rpm -i --nodeps /tmp/custom-kernel.rpm
+        rm -f "$image_mnt/tmp/custom-kernel.rpm"
+    fi
+
     echo -e '\n### Generating Initramfs'
     arch-chroot $image_mnt dracut --force --regenerate-all --verbose
 
