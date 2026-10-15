@@ -6,9 +6,3 @@ gtk-theme='Adwaita-dark'
 # Turn on the preinstalled extensions by default
 [org.gnome.shell]
 enabled-extensions=['screen-rotate@shyzus.github.io', 'appindicatorsupport@rgcjonas.gmail.com']
-
-# The preset monitors.xml uses logical layout with a fractional scale (1.75).
-# Without this mutter rejects that config, and every rotation change fails with
-# "Changes Cannot be Applied - This could be due to hardware limitations".
-[org.gnome.mutter]
-experimental-features=['scale-monitor-framebuffer', 'xwayland-native-scaling']

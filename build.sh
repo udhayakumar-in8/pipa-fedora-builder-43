@@ -127,10 +127,10 @@ install_rustdesk() {
         | grep -v suse | head -1 | cut -d'"' -f4)
     [[ -n "$url" ]] || return 1
     echo "### Downloading $url"
-    curl -fsSL -o "$image_mnt/tmp/rustdesk.rpm" "$url" || return 1
-    arch-chroot $image_mnt dnf -y install /tmp/rustdesk.rpm
+    curl -fsSL -o "$image_mnt/var/tmp/rustdesk.rpm" "$url" || return 1
+    arch-chroot $image_mnt dnf -y install /var/tmp/rustdesk.rpm
     local rc=$?
-    rm -f "$image_mnt/tmp/rustdesk.rpm"
+    rm -f "$image_mnt/var/tmp/rustdesk.rpm"
     return $rc
 }
 
