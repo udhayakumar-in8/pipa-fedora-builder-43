@@ -128,7 +128,7 @@ install_rustdesk() {
     [[ -n "$url" ]] || return 1
     echo "### Downloading $url"
     curl -fsSL -o "$image_mnt/var/tmp/rustdesk.rpm" "$url" || return 1
-    arch-chroot $image_mnt dnf -y install desktop-file-utils /var/tmp/rustdesk.rpm
+    arch-chroot $image_mnt dnf -y install /var/tmp/rustdesk.rpm
     local rc=$?
     rm -f "$image_mnt/var/tmp/rustdesk.rpm"
     return $rc
@@ -146,7 +146,8 @@ make_image() {
     echo '### Calculating root image size'
     size=$(du -BM -s --exclude=$mkosi_rootfs/boot $mkosi_rootfs | cut -dM -f1)
     echo "### Root Image size: $size MiB"
-    size=$(($size + ($size / 8) + 512))
+    # extra 512 MiB headroom for packages installed after sizing (RustDesk)
+    size=$(($size + ($size / 8) + 1024))
     echo "### Root Padded size: $size MiB"
     truncate -s ${size}M "$image_dir/$image_name/root.img"
 
@@ -273,12 +274,6 @@ make_image() {
     done
 
     if [[ "$mkosi_profile" == "gnome" ]]; then
-        # packages that may be missing for this release/arch: skip instead of failing the build
-        echo "### Installing optional Gnome apps"
-        arch-chroot $image_mnt dnf -y install --skip-unavailable \
-            vlc dia papers gnome-shell-extension-gsconnect \
-            || echo "### WARNING: optional Gnome apps install failed"
-
         echo "### Installing RustDesk"
         install_rustdesk || echo "### WARNING: RustDesk install failed, skipping"
     fi
