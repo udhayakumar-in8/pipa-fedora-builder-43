@@ -16,10 +16,27 @@ jobs:
     - name: Build the Builder container
       run: docker build . -t 'pipa-fedora-builder-43'
 
-    # Only the Gnome image is built. Other flavors: tty, plasma, plasma-mobile
+    - name: Build the tty image
+      run: docker run --privileged -v "$(pwd)"/images:/build/images -v "/dev:/dev" pipa-fedora-builder-43 tty
+
+    - name: Build the Plasma image
+      run: docker run --privileged -v "$(pwd)"/images:/build/images -v "/dev:/dev" pipa-fedora-builder-43 plasma
+
+    - name: Build the Plasma Mobile image
+      run: docker run --privileged -v "$(pwd)"/images:/build/images -v "/dev:/dev" pipa-fedora-builder-43 plasma-mobile
 
     - name: Build the Gnome image
       run: docker run --privileged -v "$(pwd)"/images:/build/images -v "/dev:/dev" pipa-fedora-builder-43 gnome
+
+    - name: Split release archives
+      run: |
+        split -b 1200m images/pipa-fedora-45-gnome-* "images/pipa-fedora-45-gnome.zip_part_"
+        split -b 1200m images/pipa-fedora-45-plasma-* "images/pipa-fedora-45-plasma.zip_part_"
+        split -b 1200m images/pipa-fedora-45-plasma-mobile-* "images/pipa-fedora-45-plasma-mobile.zip_part_"
+        
+        rm images/pipa-fedora-45-gnome-*.zip
+        rm images/pipa-fedora-45-plasma-*.zip
+        rm images/pipa-fedora-45-plasma-mobile-*.zip
 
     - name: Get current date
       id: date
@@ -30,7 +47,9 @@ jobs:
       uses: softprops/action-gh-release@v2.6.1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        tag_name: f45-${{ steps.date.outputs.date }}
-        name: Fedora 45 ${{ steps.date.outputs.date }}
-        files: images/*.zip
+        tag_name: f44-${{ steps.date.outputs.date }}
+        name: Fedora 44 ${{ steps.date.outputs.date }}
+        files: |
+          images/*tty*.zip
+          images/*_part_*
         draft: true
