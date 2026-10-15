@@ -45,7 +45,7 @@ Change these default credentials after installation.
 
 ### Issues (all flavors):
 - Front camera doesnt work, back camera might
-- Sensors (accelerometer for auto screen rotation) are enabled by default. They can break after suspend, so the image restarts the ```hexagonrpcd-sdsp``` & ```iio-sensor-proxy``` services after every resume (it takes a few seconds for rotation to come back). Check them with ```sudo monitor-sensor``` (without sudo it only works from a terminal on the tablet itself, not over SSH). If it says *No accelerometer*, run ```pipa-sensor-check > sensors.txt``` and share the file
+- Sensors (accelerometer for auto screen rotation) are enabled by default. They can break after suspend, so the image restarts the ```hexagonrpcd-sdsp``` & ```iio-sensor-proxy``` services after every resume (it takes ~20s for rotation to come back). A watchdog (```pipa-sensors-watchdog.timer```) also checks every minute and recovers the accelerometer if it's lost, giving up after 5 failed tries until the next resume/reboot. Check them with ```sudo monitor-sensor``` (without sudo it only works from a terminal on the tablet itself, not over SSH). If it says *No accelerometer*, run ```pipa-sensor-check > sensors.txt``` and share the file
 
 ### Tips and Tricks:
 - Run ```widevine-installer``` to install the Widevinde CDM for Firefox and Chromium based browsers, works for system packages only. **(The widevine CDM module is not altered in any way, nor is it preinstalled or distributed by me)**

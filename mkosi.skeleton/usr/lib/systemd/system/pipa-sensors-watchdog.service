@@ -1,0 +1,7 @@
+[Unit]
+Description=Recover the pipa accelerometer if iio-sensor-proxy lost it
+After=iio-sensor-proxy.service hexagonrpcd-sdsp.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/pipa-sensors-watchdog

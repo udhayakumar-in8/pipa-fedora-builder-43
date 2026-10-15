@@ -4,6 +4,10 @@
 # ready; restarting iio-sensor-proxy earlier leaves it without an accelerometer
 # and GNOME hides the auto-rotate toggle. Retry until the accelerometer is back.
 
+# only one recovery at a time (resume hook and watchdog can both call this)
+exec 9>/run/pipa-sensors.lock
+flock -n 9 || { echo "sensor recovery already running"; exit 0; }
+
 has_accel() {
     busctl get-property net.hadess.SensorProxy /net/hadess/SensorProxy \
         net.hadess.SensorProxy HasAccelerometer 2>/dev/null | grep -q true

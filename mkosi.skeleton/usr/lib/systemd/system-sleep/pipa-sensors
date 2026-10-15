@@ -5,5 +5,8 @@
 
 [[ "$1" == "post" ]] || exit 0
 
+# fresh start for the watchdog after every resume
+rm -f /run/pipa-sensors-watchdog.failures
+
 systemd-run --no-block --collect --on-active=2 --unit="pipa-sensors-resume-$(date +%s)" \
     /usr/libexec/pipa-sensors-resume

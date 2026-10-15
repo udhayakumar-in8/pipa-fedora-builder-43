@@ -1,0 +1,10 @@
+[Unit]
+Description=Check the pipa accelerometer every minute
+
+[Timer]
+OnBootSec=90
+OnUnitInactiveSec=60
+AccuracySec=10
+
+[Install]
+WantedBy=timers.target
