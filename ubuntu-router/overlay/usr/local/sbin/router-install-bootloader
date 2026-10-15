@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# Install GRUB for both UEFI and legacy BIOS on the router disk.
+#
+#   UEFI: \EFI\BOOT\BOOTX64.EFI on the ESP (removable path, no NVRAM entry
+#         needed, so the disk boots in any machine).
+#   BIOS: boot.img in the MBR, core.img embedded in the bios_boot partition.
+#
+# Both images find /boot by filesystem UUID and load /boot/grub/grub.cfg,
+# which update-grub keeps current on kernel upgrades.
+#
+# Usage: router-install-bootloader [DISK] [BOOT_FS_UUID]
+#   Without arguments the disk holding /boot and its UUID are detected.
+
+set -euo pipefail
+
+disk="${1:-}"
+boot_uuid="${2:-}"
+
+if [[ -z "$disk" ]]; then
+    boot_src="$(findmnt -no SOURCE /boot)"
+    disk="/dev/$(lsblk -no PKNAME "$boot_src" | head -1)"
+fi
+[[ -z "$boot_uuid" ]] && boot_uuid="$(findmnt -no UUID /boot)"
+[[ -b "$disk" ]] || { echo "not a block device: $disk" >&2; exit 1; }
+[[ -n "$boot_uuid" ]] || { echo "cannot determine /boot UUID" >&2; exit 1; }
+mountpoint -q /boot/efi || { echo "/boot/efi is not mounted" >&2; exit 1; }
+
+echo "Installing GRUB on $disk (/boot UUID $boot_uuid)"
+
+early_cfg="$(mktemp)"
+trap 'rm -f "$early_cfg"' EXIT
+cat > "$early_cfg" <<EOF
+search --no-floppy --fs-uuid --set=root $boot_uuid
+set prefix=(\$root)/grub
+EOF
+
+modules="part_gpt part_msdos ext2 fat search search_fs_uuid normal configfile
+         linux echo test gzio serial terminal terminfo"
+
+# UEFI
+install -d /boot/grub/x86_64-efi /boot/efi/EFI/BOOT
+cp /usr/lib/grub/x86_64-efi/*.mod /usr/lib/grub/x86_64-efi/*.lst /boot/grub/x86_64-efi/
+# shellcheck disable=SC2086
+grub-mkimage -O x86_64-efi -p /grub -c "$early_cfg" \
+    -o /boot/efi/EFI/BOOT/BOOTX64.EFI $modules efi_gop efi_uga all_video
+
+# Legacy BIOS
+install -d /boot/grub/i386-pc
+cp /usr/lib/grub/i386-pc/*.mod /usr/lib/grub/i386-pc/*.lst /usr/lib/grub/i386-pc/boot.img /boot/grub/i386-pc/
+# shellcheck disable=SC2086
+grub-mkimage -O i386-pc -p /grub -c "$early_cfg" \
+    -o /boot/grub/i386-pc/core.img biosdisk $modules
+grub-bios-setup --directory=/boot/grub/i386-pc --skip-fs-probe "$disk"
+
+[[ -e /boot/grub/grubenv ]] || grub-editenv /boot/grub/grubenv create
+echo "GRUB installed (UEFI + BIOS)."

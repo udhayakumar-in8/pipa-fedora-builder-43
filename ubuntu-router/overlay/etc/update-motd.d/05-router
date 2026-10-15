@@ -1,0 +1,4 @@
+#!/bin/sh
+. /etc/router-release
+printf '\n  %s %s  (Ubuntu %s, built %s, %s)\n' "$NAME" "$VERSION" "$SUITE" "$BUILD_DATE" "$GIT_COMMIT"
+printf '  Firewall: /etc/nftables.conf   Network: /etc/netplan/   Examples: /etc/router/examples/\n\n'

@@ -1,0 +1,24 @@
+# Packages that must never be installed, at build time or later with apt.
+# They are pinned to priority -1 in /etc/apt/preferences.d/router-blocklist.
+snapd
+cloud-init
+cloud-guest-utils
+ubuntu-advantage-tools
+ubuntu-pro-client
+landscape-common
+apport
+apport-symptoms
+whoopsie
+popularity-contest
+motd-news-config
+update-notifier-common
+ubuntu-release-upgrader-core
+network-manager
+modemmanager
+avahi-daemon
+cups
+plymouth
+ubuntu-desktop
+ubuntu-desktop-minimal
+xserver-xorg
+xserver-xorg-core

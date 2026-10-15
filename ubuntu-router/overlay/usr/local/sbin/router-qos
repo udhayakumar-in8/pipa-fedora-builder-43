@@ -1,0 +1,60 @@
+#!/bin/bash
+#
+# Smart queue management with CAKE on the WAN interface.
+# Settings: /etc/default/router-qos
+#
+#   upload   : CAKE on the WAN egress
+#   download : WAN ingress redirected to an IFB device, CAKE on its egress
+#
+# Usage: router-qos start|stop|status
+
+set -euo pipefail
+
+QOS_IF="eth0"
+QOS_UPLOAD_KBIT=0
+QOS_DOWNLOAD_KBIT=0
+QOS_CAKE_OPTS="diffserv4 nat"
+QOS_CAKE_INGRESS_OPTS="diffserv4 nat wash ingress"
+# shellcheck source=/dev/null
+[[ -f /etc/default/router-qos ]] && source /etc/default/router-qos
+
+IFB="ifb-${QOS_IF:0:11}"
+
+stop() {
+    tc qdisc del dev "$QOS_IF" root    2>/dev/null || true
+    tc qdisc del dev "$QOS_IF" ingress 2>/dev/null || true
+    ip link del "$IFB"                 2>/dev/null || true
+}
+
+start() {
+    stop
+    if (( QOS_UPLOAD_KBIT > 0 )); then
+        # shellcheck disable=SC2086
+        tc qdisc replace dev "$QOS_IF" root cake bandwidth "${QOS_UPLOAD_KBIT}kbit" $QOS_CAKE_OPTS
+    fi
+    if (( QOS_DOWNLOAD_KBIT > 0 )); then
+        modprobe ifb numifbs=0
+        ip link add "$IFB" type ifb
+        ip link set "$IFB" up
+        tc qdisc add dev "$QOS_IF" handle ffff: ingress
+        tc filter add dev "$QOS_IF" parent ffff: matchall action mirred egress redirect dev "$IFB"
+        # shellcheck disable=SC2086
+        tc qdisc replace dev "$IFB" root cake bandwidth "${QOS_DOWNLOAD_KBIT}kbit" $QOS_CAKE_INGRESS_OPTS
+    fi
+    if (( QOS_UPLOAD_KBIT == 0 && QOS_DOWNLOAD_KBIT == 0 )); then
+        echo "router-qos: no bandwidth set in /etc/default/router-qos, nothing to do"
+    fi
+}
+
+status() {
+    tc -s qdisc show dev "$QOS_IF"
+    ip link show "$IFB" >/dev/null 2>&1 && tc -s qdisc show dev "$IFB"
+    return 0
+}
+
+case "${1:-}" in
+    start)  start ;;
+    stop)   stop ;;
+    status) status ;;
+    *) echo "usage: $0 start|stop|status" >&2; exit 2 ;;
+esac

@@ -1,0 +1,8 @@
+# QoS (CAKE) settings for router-qos.service.
+# Set the bandwidths to ~90-95% of your real line speed, then:
+#   systemctl enable --now router-qos
+QOS_IF="@WAN_IF@"
+QOS_UPLOAD_KBIT=0        # e.g. 19000 for a 20 Mbit/s upload
+QOS_DOWNLOAD_KBIT=0      # e.g. 95000 for a 100 Mbit/s download
+QOS_CAKE_OPTS="diffserv4 nat"
+QOS_CAKE_INGRESS_OPTS="diffserv4 nat wash ingress"

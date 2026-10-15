@@ -1,0 +1,31 @@
+# Example: LACP bond of eth1+eth2 -> VLANs -> bridge for the LAN.
+# Copy to /etc/netplan/, chmod 600, adapt, then: netplan try
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth1: {}
+    eth2: {}
+  bonds:
+    bond0:
+      interfaces: [eth1, eth2]
+      parameters:
+        mode: 802.3ad           # or active-backup, balance-alb, ...
+        lacp-rate: fast
+        mii-monitor-interval: 100
+        transmit-hash-policy: layer3+4
+  vlans:
+    vlan10:
+      id: 10
+      link: bond0
+    vlan20:
+      id: 20
+      link: bond0
+      addresses: [192.168.20.1/24]
+  bridges:
+    br-lan:
+      interfaces: [vlan10]
+      addresses: [192.168.10.1/24]
+      parameters:
+        stp: false
+        forward-delay: 0

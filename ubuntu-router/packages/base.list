@@ -1,0 +1,59 @@
+# Minimal headless Ubuntu server base.
+# One package per line, '#' starts a comment.
+# The kernel comes from KERNEL_PACKAGE in config/build.conf.
+
+# init / core
+systemd
+systemd-sysv
+udev
+dbus
+kmod
+procps
+psmisc
+less
+nano
+vim-tiny
+bash-completion
+sudo
+locales
+tzdata
+ca-certificates
+apt-utils
+gpg
+curl
+logrotate
+cron
+
+# boot (grub for both legacy BIOS and UEFI)
+initramfs-tools
+grub2-common
+grub-pc-bin
+grub-efi-amd64-bin
+linux-firmware
+intel-microcode
+amd64-microcode
+
+# filesystems / disks
+e2fsprogs
+dosfstools
+gdisk
+fdisk
+
+# hardware
+pciutils
+usbutils
+ethtool
+irqbalance
+
+# networking core
+netplan.io
+iproute2
+iputils-ping
+iputils-tracepath
+chrony
+
+# security
+openssh-server
+apparmor
+fail2ban
+python3-systemd

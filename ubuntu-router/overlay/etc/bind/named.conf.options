@@ -1,0 +1,31 @@
+// BIND: caching, DNSSEC validating resolver for the router and the LAN.
+// Check the config with: named-checkconf
+
+acl trusted {
+    127.0.0.0/8;
+    ::1;
+    localnets;      // directly connected networks (LAN)
+};
+
+options {
+    directory "/var/cache/bind";
+
+    recursion yes;
+    allow-recursion { trusted; };
+    allow-query { trusted; };
+    allow-query-cache { trusted; };
+    allow-transfer { none; };
+
+    listen-on { any; };
+    listen-on-v6 { any; };
+
+    // Use your ISP / public resolvers instead of full recursion:
+    // forwarders { 1.1.1.1; 9.9.9.9; };
+    // forward only;
+
+    dnssec-validation auto;
+    minimal-responses yes;
+    version none;
+    hostname none;
+    server-id none;
+};

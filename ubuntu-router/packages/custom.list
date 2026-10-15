@@ -1,0 +1,10 @@
+# Your own packages, always included in every build.
+# Add one package per line and rebuild. Examples:
+#
+# isc-kea-dhcp4-server     # DHCP server for the LAN
+# pppoe                    # PPPoE WAN
+# frr                      # alternative routing suite
+# prometheus-node-exporter
+# htop
+#
+# Local .deb files go in packages/debs/ and are installed automatically.

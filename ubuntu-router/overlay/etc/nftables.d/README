@@ -1,0 +1,8 @@
+Files named *.nft in this directory are included at the end of
+/etc/nftables.conf. You can add rules to the existing chains, e.g.
+
+    add rule inet filter input iifname "eth0" udp dport 51820 accept
+
+or create your own tables. Examples: /etc/router/examples/
+Test before applying:  nft -c -f /etc/nftables.conf
+Apply:                 systemctl reload nftables

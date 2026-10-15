@@ -1,0 +1,8 @@
+#!/bin/sh
+# Regenerate grub.cfg after a kernel is installed (the grub-pc/grub-efi
+# packages that normally ship this hook are not installed on the router).
+set -e
+[ -n "${ROUTER_BUILD:-}" ] && exit 0
+[ -e /boot/grub/grub.cfg ] || exit 0
+command -v update-grub >/dev/null 2>&1 || exit 0
+exec update-grub

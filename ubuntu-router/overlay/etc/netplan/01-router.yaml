@@ -1,0 +1,17 @@
+# Router interfaces. Apply changes with: netplan try
+# Bond / bridge / VLAN examples: /etc/router/examples/netplan-bond-bridge-vlan.yaml
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    @WAN_IF@:          # WAN
+      dhcp4: true
+      dhcp6: true
+      accept-ra: true
+      optional: true
+    @LAN_IF@:          # LAN
+      addresses: [@LAN_ADDR@]
+      dhcp4: false
+      dhcp6: false
+      accept-ra: false
+      optional: true

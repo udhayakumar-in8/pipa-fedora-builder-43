@@ -1,0 +1,35 @@
+# Router / gateway packages.
+
+# firewall, NAT, conntrack, tproxy (nftables tproxy support is in the kernel)
+nftables
+conntrack
+
+# VPN
+wireguard-tools
+openvpn
+strongswan-swanctl
+charon-systemd
+libcharon-extra-plugins
+libstrongswan-extra-plugins
+
+# dynamic routing
+bird2
+
+# DNS
+bind9
+bind9-dnsutils
+
+# bonding / bridging / VLAN (netplan configures these natively)
+ifenslave
+bridge-utils
+vlan
+
+# QoS: tc (iproute2) + CAKE, driven by router-qos.service
+
+# diagnostics / monitoring
+vnstat
+tcpdump
+iperf
+iperf3
+mtr-tiny
+traceroute
