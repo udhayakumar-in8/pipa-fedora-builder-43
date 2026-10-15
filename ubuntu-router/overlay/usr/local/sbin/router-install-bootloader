@@ -54,7 +54,7 @@ cp /usr/lib/grub/i386-pc/*.mod /usr/lib/grub/i386-pc/*.lst /usr/lib/grub/i386-pc
 # shellcheck disable=SC2086
 grub-mkimage -O i386-pc -p /grub -c "$early_cfg" \
     -o /boot/grub/i386-pc/core.img biosdisk $modules
-grub-bios-setup --directory=/boot/grub/i386-pc --skip-fs-probe "$disk"
+/usr/lib/grub/i386-pc/grub-bios-setup --directory=/boot/grub/i386-pc --skip-fs-probe "$disk"
 
 [[ -e /boot/grub/grubenv ]] || grub-editenv /boot/grub/grubenv create
 echo "GRUB installed (UEFI + BIOS)."

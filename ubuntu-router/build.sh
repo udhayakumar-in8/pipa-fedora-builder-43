@@ -438,12 +438,13 @@ stage_cleanup_rootfs() {
 
 # Attach one loop device for partition N of the image (works without udev or
 # kernel partition scanning, e.g. inside containers).
-loop_part() {
+# Not called in $(...): LOOPS must be updated in this shell for cleanup().
+loop_part() {  # loop_part N VARNAME
     local n="$1" start sectors dev
     read -r start sectors < <(partx -g -o START,SECTORS -n "$n" "$IMAGE")
     dev="$(losetup -f --show -o $((start * 512)) --sizelimit $((sectors * 512)) "$IMAGE")"
     LOOPS+=("$dev")
-    echo "$dev"
+    printf -v "$2" '%s' "$dev"
 }
 
 stage_image() {
@@ -460,10 +461,10 @@ stage_image() {
     sgdisk -p "$IMAGE" | sed -n '/^Number/,$p' | sed 's/^/    /'
 
     DISK_LOOP="$(losetup -f --show "$IMAGE")"; LOOPS+=("$DISK_LOOP")
-    ESP_DEV="$(loop_part 2)"
-    BOOT_DEV="$(loop_part 3)"
-    ROOT_DEV="$(loop_part 4)"
-    VAR_DEV="$(loop_part 5)"
+    loop_part 2 ESP_DEV
+    loop_part 3 BOOT_DEV
+    loop_part 4 ROOT_DEV
+    loop_part 5 VAR_DEV
 
     ESP_UUID="$(random_str 8 'A-F0-9')"
     ESP_UUID="${ESP_UUID:0:4}-${ESP_UUID:4:4}"
@@ -490,7 +491,14 @@ tmpfs              /tmp           tmpfs   defaults,nodev,nosuid,mode=1777,size=2
 EOF
 
     log "Copying rootfs into partitions"
-    do_mount "$ROOT_DEV" "$MNT"
+    # Mount / through an alias device node: Ubuntu's grub-mkconfig treats a
+    # root on /dev/loopN specially (Wubi) and would generate no boot entries.
+    local major minor
+    read -r major minor < <(stat -c '%t %T' "$ROOT_DEV")
+    ROOT_ALIAS="/dev/router-root-$$"
+    mknod "$ROOT_ALIAS" b $((16#$major)) $((16#$minor))
+    CREATED_LINKS+=("$ROOT_ALIAS")
+    do_mount "$ROOT_ALIAS" "$MNT"
     mkdir -p "$MNT/boot" "$MNT/var"
     do_mount "$BOOT_DEV" "$MNT/boot"
     mkdir -p "$MNT/boot/efi"   # ESP is filled with mtools later (no vfat kernel module needed)
@@ -518,8 +526,10 @@ stage_bootloader() {
 
     in_chroot "$MNT" /usr/local/sbin/router-install-bootloader "$DISK_LOOP" "$BOOT_UUID"
     # Move the EFI files from the /boot/efi directory into the ESP.
-    MTOOLS_SKIP_CHECK=1 mcopy -s -o -i "$ESP_DEV" "$MNT"/boot/efi/* ::/
-    MTOOLS_SKIP_CHECK=1 mdir -/ -i "$ESP_DEV" ::/ | sed -n 's/^/    /p' | grep -i 'efi' || true
+    local esp_offset
+    esp_offset=$(( $(partx -g -o START -n 2 "$IMAGE") * 512 ))
+    MTOOLS_SKIP_CHECK=1 mcopy -s -o -i "$IMAGE@@$esp_offset" "$MNT"/boot/efi/* ::/
+    MTOOLS_SKIP_CHECK=1 mdir -/ -b -i "$IMAGE@@$esp_offset" ::/ | sed 's/^/    /'
     rm -rf "${MNT:?}"/boot/efi/*
     in_chroot "$MNT" update-initramfs -u -k all
     in_chroot "$MNT" update-grub
