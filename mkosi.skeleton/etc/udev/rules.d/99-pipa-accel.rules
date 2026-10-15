@@ -1,0 +1,4 @@
+# pipa-sensors only exposes "ssc-light ssc-compass" from the SDSP sensor hub,
+# so iio-sensor-proxy reports no accelerometer and auto-rotation can't work.
+# Expose the SSC accelerometer as well (sorts after the pipa-sensors rule).
+SUBSYSTEM=="misc", KERNEL=="fastrpc-sdsp", ENV{IIO_SENSOR_PROXY_TYPE}="ssc-accel ssc-light ssc-compass"
