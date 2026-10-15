@@ -1,0 +1,18 @@
+#!/bin/bash
+# Event-driven accelerometer watchdog. Blocks on D-Bus (no polling, no wakeups)
+# and reacts only when iio-sensor-proxy reports HasAccelerometer=false or
+# drops off the bus. After a grace period it runs pipa-sensors-watchdog, which
+# re-checks, recovers if still needed and enforces the failure limit.
+
+GRACE=20
+
+gdbus monitor --system --dest net.hadess.SensorProxy --object-path /net/hadess/SensorProxy |
+while read -r line; do
+    case "$line" in
+        *"'HasAccelerometer': <false>"*|*"does not have an owner"*)
+            echo "accelerometer lost ($line), re-checking in ${GRACE}s"
+            sleep "$GRACE"
+            /usr/libexec/pipa-sensors-watchdog
+            ;;
+    esac
+done

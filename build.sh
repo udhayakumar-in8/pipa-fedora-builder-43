@@ -214,7 +214,9 @@ make_image() {
     chmod 755 "$image_mnt/usr/lib/systemd/system-sleep/pipa-sensors"
     chmod 755 "$image_mnt/usr/libexec/pipa-sensors-resume"
     chmod 755 "$image_mnt/usr/libexec/pipa-sensors-watchdog"
+    chmod 755 "$image_mnt/usr/libexec/pipa-sensors-monitor"
     arch-chroot $image_mnt systemctl enable pipa-sensors-watchdog.timer
+    arch-chroot $image_mnt systemctl enable pipa-sensors-monitor.service
     chmod 755 "$image_mnt/usr/bin/pipa-sensor-check"
     echo "### Setting default systemd target"
     if [[ -n "$mkosi_profile" ]]; then

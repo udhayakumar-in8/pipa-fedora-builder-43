@@ -1,0 +1,11 @@
+[Unit]
+Description=Recover the pipa accelerometer when iio-sensor-proxy loses it
+After=dbus.service iio-sensor-proxy.service
+
+[Service]
+ExecStart=/usr/libexec/pipa-sensors-monitor
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
