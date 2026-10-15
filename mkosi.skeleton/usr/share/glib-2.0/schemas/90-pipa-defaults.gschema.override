@@ -6,3 +6,5 @@ gtk-theme='Adwaita-dark'
 # Turn on the preinstalled extensions by default
 [org.gnome.shell]
 enabled-extensions=['screen-rotate@shyzus.github.io', 'appindicatorsupport@rgcjonas.gmail.com']
+# the packaged screen-rotate extension doesn't list this GNOME version yet
+disable-extension-version-validation=true
