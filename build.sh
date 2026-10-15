@@ -205,6 +205,7 @@ make_image() {
     # (minutes of restart loops). Remove it and keep dnf from bringing it back.
     arch-chroot $image_mnt rpm -e --nodeps pipa-sensor-restart 2>/dev/null || true
     rm -f "$image_mnt/usr/lib/systemd/system-sleep/pipa-sensor-restart"
+    [[ -s "$image_mnt/etc/dnf/dnf.conf" ]] || echo '[main]' > "$image_mnt/etc/dnf/dnf.conf"
     grep -q '^excludepkgs=.*pipa-sensor-restart' "$image_mnt/etc/dnf/dnf.conf" \
         || echo 'excludepkgs=pipa-sensor-restart' >> "$image_mnt/etc/dnf/dnf.conf"
     arch-chroot $image_mnt systemctl enable hexagonrpcd-sdsp.service
