@@ -119,6 +119,21 @@ elif [[ $1 == 'umount' ]] || [[ $1 == 'unmount' ]]; then
     exit
 fi
 
+# RustDesk isn't in the Fedora repos; install the aarch64 RPM from its latest GitHub release
+install_rustdesk() {
+    local url
+    url=$(curl -fsSL https://api.github.com/repos/rustdesk/rustdesk/releases/latest \
+        | grep -o '"browser_download_url": *"[^"]*aarch64\.rpm"' \
+        | grep -v suse | head -1 | cut -d'"' -f4)
+    [[ -n "$url" ]] || return 1
+    echo "### Downloading $url"
+    curl -fsSL -o "$image_mnt/tmp/rustdesk.rpm" "$url" || return 1
+    arch-chroot $image_mnt dnf -y install /tmp/rustdesk.rpm
+    local rc=$?
+    rm -f "$image_mnt/tmp/rustdesk.rpm"
+    return $rc
+}
+
 make_image() {
     # if  $image_mnt is mounted, then unmount it
     umount_image
@@ -244,6 +259,19 @@ make_image() {
     if [[ -d "$image_mnt/usr/share/glib-2.0/schemas" ]]; then
         echo "### Compiling GSettings schemas (dark mode default)"
         arch-chroot $image_mnt glib-compile-schemas /usr/share/glib-2.0/schemas
+    fi
+
+    # some packaged extensions (e.g. screen-rotate) ship schemas/ without
+    # gschemas.compiled, so their settings dialog fails to open
+    for schema_dir in "$image_mnt"/usr/share/gnome-shell/extensions/*/schemas; do
+        [[ -d "$schema_dir" ]] || continue
+        echo "### Compiling extension schemas in ${schema_dir#$image_mnt}"
+        arch-chroot $image_mnt glib-compile-schemas "${schema_dir#$image_mnt}"
+    done
+
+    if [[ "$mkosi_profile" == "gnome" ]]; then
+        echo "### Installing RustDesk"
+        install_rustdesk || echo "### WARNING: RustDesk install failed, skipping"
     fi
     
     # echo "### SElinux labeling filesystem"
