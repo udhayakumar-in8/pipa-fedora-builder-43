@@ -1,5 +1,5 @@
 [Unit]
-Description=Recover the pipa accelerometer if iio-sensor-proxy lost it
+Description=Check the pipa accelerometer and recover it if lost
 After=iio-sensor-proxy.service hexagonrpcd-sdsp.service
 
 [Service]

@@ -1,12 +1,10 @@
 #!/bin/bash
 # The SDSP sensor hub often doesn't come back after suspend, which breaks
-# auto-rotation. Restart the sensor services after every resume.
+# auto-rotation. ~15s after every resume, check the accelerometer once and
+# recover it only if it's missing (it often comes back on its own).
 # Runs as a transient unit so systemd-sleep doesn't wait on (or kill) it.
 
 [[ "$1" == "post" ]] || exit 0
 
-# fresh start for the watchdog after every resume
-rm -f /run/pipa-sensors-watchdog.failures
-
-systemd-run --no-block --collect --on-active=2 --unit="pipa-sensors-resume-$(date +%s)" \
-    /usr/libexec/pipa-sensors-resume
+systemd-run --no-block --collect --on-active=15 --unit="pipa-sensors-check-$(date +%s)" \
+    /usr/libexec/pipa-sensors-watchdog
