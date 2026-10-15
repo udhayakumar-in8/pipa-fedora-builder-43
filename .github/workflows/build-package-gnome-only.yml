@@ -9,6 +9,10 @@ on:
     branches:
       - claude/bold-hopper-jgiaod
 
+concurrency:
+  group: gnome-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-24.04-arm
@@ -36,6 +40,18 @@ jobs:
         compression-level: 0
         retention-days: 14
 
+    - name: Split image for release if over 2 GB
+      run: |
+        mkdir -p release
+        for f in images/*.zip; do
+          if [ "$(stat -c %s "$f")" -gt 2000000000 ]; then
+            split -b 1900M -d -a 2 "$f" "release/$(basename "$f")."
+          else
+            cp "$f" release/
+          fi
+        done
+        ls -l release
+
     - name: Get current date
       id: date
       run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
@@ -46,5 +62,8 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: f45-gnome-${{ steps.date.outputs.date }}-${{ github.run_number }}
         name: Fedora 45 Gnome ${{ steps.date.outputs.date }}
-        files: images/*.zip
+        files: release/*
         draft: true
+        body: |
+          If the image is split into `.zip.00`, `.zip.01`, ... join the parts first:
+          `cat *.zip.?? > image.zip` (Linux/macOS) or `copy /b file.zip.00+file.zip.01 image.zip` (Windows), then unzip.

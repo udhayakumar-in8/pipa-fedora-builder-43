@@ -1,0 +1,4 @@
+# Dark mode by default (users can still switch in Settings -> Appearance)
+[org.gnome.desktop.interface]
+color-scheme='prefer-dark'
+gtk-theme='Adwaita-dark'

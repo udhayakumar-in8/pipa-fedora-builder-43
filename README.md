@@ -16,7 +16,7 @@
   - run ```./niri-install``` to install & set up Niri or Hyprland with DankMaterialShell and get started quickly (Keyboard & Internet connection required) 
 	
 - Common Packages:
-	- ```fish``` for a better command line experience, default for ```user```
+	- ```fish``` for a better command line experience, default for ```udhayakumar```
 	- ```tuned``` & ```tuned-ppd``` for better performance and power profiles in Gnome and KDE
 	- ```widevine-installer``` from Asahi Linux
 
@@ -34,7 +34,7 @@
 ### Default Credentials:
 
 - **Admin (sudo) User**
-  - Username: `user`
+  - Username: `udhayakumar`
   - Password: `147147`
 
 - **Root**
@@ -54,6 +54,8 @@ Change these default credentials after installation.
 	- The login screen comes pre-rotated. If you change the rotation, apply it to plasmalogin in Settings -> Login Screen -> Apply Plasma Settings...
 	- Auto rotation only runs in tablet mode by default; change it in Settings -> Display & Monitor -> Orientation
 - Gnome Flavor:
+	- Preinstalled: LibreOffice (Writer, Calc, Impress), Remmina (RDP/VNC), GNOME Terminal, Tilix, Text Editor, Vim, OpenVPN. Dark mode is on by default
+	- Waterfox and AnyDesk have no ARM64 Linux builds, so they can't be installed on pipa. Firefox is preinstalled; RustDesk is an ARM64-capable AnyDesk alternative
 	- Auto rotation works out of the box. Use the preinstalled Screen Rotate extension for a manual rotation toggle or to force auto rotation while a keyboard is attached
 	- Install the [GJS OSK extension](https://github.com/Vishram1123/gjs-osk) to make the Gnome OSK usable (if your enter key gets stuck, remove it)
 	- Install the [TouchUP extension](https://github.com/mityax/gnome-extension-touchup) to make the Gnome Shell more usable on a Touchscreen

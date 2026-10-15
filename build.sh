@@ -10,6 +10,8 @@ de_name="${1:-}"
 mkosi_profile=""
 os_release='fedora-45'
 release_type='beta-prerelease'
+default_user='udhayakumar'
+default_password='147147'
 
 get_de_name() {
     echo "### Flavor:"
@@ -233,11 +235,16 @@ make_image() {
     fi
 
     echo "### Creating default user and setting fish as their shell"
-    arch-chroot $image_mnt useradd -m -G audio,video,wheel user
-    echo 'user:147147' | arch-chroot $image_mnt chpasswd
-    arch-chroot $image_mnt chsh -s /bin/fish user
-    arch-chroot $image_mnt chmod +x /home/user/post-install
-    arch-chroot $image_mnt chmod +x /home/user/niri-install
+    arch-chroot $image_mnt useradd -m -G audio,video,wheel "$default_user"
+    echo "$default_user:$default_password" | arch-chroot $image_mnt chpasswd
+    arch-chroot $image_mnt chsh -s /bin/fish "$default_user"
+    arch-chroot $image_mnt chmod +x "/home/$default_user/post-install"
+    arch-chroot $image_mnt chmod +x "/home/$default_user/niri-install"
+
+    if [[ -d "$image_mnt/usr/share/glib-2.0/schemas" ]]; then
+        echo "### Compiling GSettings schemas (dark mode default)"
+        arch-chroot $image_mnt glib-compile-schemas /usr/share/glib-2.0/schemas
+    fi
     
     # echo "### SElinux labeling filesystem"
     # arch-chroot $image_mnt setfiles -F -p -c /etc/selinux/targeted/policy/policy.* -e /proc -e /sys -e /dev /etc/selinux/targeted/contexts/files/file_contexts /
@@ -265,7 +272,7 @@ make_image() {
     echo -e '\n### Compressing'
     rm -f $image_dir/"$image_name".zip
     pushd $image_dir/"$image_name" > /dev/null
-    zip -r ../"$image_name".zip .
+    zip -r -9 ../"$image_name".zip .
     popd > /dev/null
 
     echo '### Done'
