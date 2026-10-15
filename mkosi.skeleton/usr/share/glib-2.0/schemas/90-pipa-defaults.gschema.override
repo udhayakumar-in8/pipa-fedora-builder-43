@@ -8,3 +8,8 @@ gtk-theme='Adwaita-dark'
 enabled-extensions=['screen-rotate@shyzus.github.io', 'appindicatorsupport@rgcjonas.gmail.com', 'gsconnect@andyholmes.github.io']
 # the packaged screen-rotate extension doesn't list this GNOME version yet
 disable-extension-version-validation=true
+
+# Always offer the on-screen keyboard (login/lock screen too); without it you
+# can't type the password on the tablet without a physical keyboard
+[org.gnome.desktop.a11y.applications]
+screen-keyboard-enabled=true
