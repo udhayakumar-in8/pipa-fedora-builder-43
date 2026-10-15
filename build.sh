@@ -186,6 +186,7 @@ make_image() {
     # iio-sensor-proxy is normally started by udev; enable it too in case it isn't
     arch-chroot $image_mnt systemctl enable iio-sensor-proxy.service || true
     chmod 755 "$image_mnt/usr/lib/systemd/system-sleep/pipa-sensors"
+    chmod 755 "$image_mnt/usr/bin/pipa-sensor-check"
     echo "### Setting default systemd target"
     if [[ -n "$mkosi_profile" ]]; then
         arch-chroot "$image_mnt" systemctl set-default graphical.target

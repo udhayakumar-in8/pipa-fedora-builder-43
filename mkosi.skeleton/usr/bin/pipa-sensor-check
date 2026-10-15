@@ -1,0 +1,30 @@
+#!/bin/bash
+# Collect what's needed to debug "No accelerometer" / auto-rotation on pipa.
+# Usage: pipa-sensor-check > sensors.txt
+
+section() { echo; echo "===== $* ====="; }
+
+section "kernel"
+uname -r
+
+section "packages"
+rpm -q iio-sensor-proxy hexagonrpc pipa-sensors pipa-sensor-restart libssc 2>&1
+
+section "fastrpc devices"
+ls -l /dev/fastrpc-* 2>&1
+lsmod | grep -iE 'fastrpc|qrtr|ssc' 2>&1
+
+section "udev properties of fastrpc-sdsp"
+udevadm info /dev/fastrpc-sdsp 2>&1 | grep -iE 'IIO|SSC|ACCEL|TAGS|DEVNAME'
+
+section "iio devices"
+ls /sys/bus/iio/devices/ 2>&1
+
+section "services"
+systemctl status --no-pager hexagonrpcd-sdsp.service iio-sensor-proxy.service 2>&1
+
+section "journal (this boot)"
+journalctl -b --no-pager -u hexagonrpcd-sdsp.service -u iio-sensor-proxy.service 2>&1 | tail -n 80
+
+section "monitor-sensor (5s)"
+timeout 5 monitor-sensor 2>&1
