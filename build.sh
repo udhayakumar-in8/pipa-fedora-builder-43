@@ -306,6 +306,10 @@ make_image() {
 
     cp $image_mnt/boot/boot*.img $image_dir/$image_name/boot.img
 
+    echo '### Adding flash scripts'
+    install -m 755 flash/flash.sh "$image_dir/$image_name/flash.sh"
+    install -m 644 flash/flash.bat "$image_dir/$image_name/flash.bat"
+
     echo -e '\n### Unmounting rootfs subvolumes'
     umount $image_mnt
 

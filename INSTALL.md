@@ -1,5 +1,12 @@
 # Installation guide
 
+### Quick install
+Unzip the image, boot the tablet into fastboot (hold `Volume Down` + `Power`), connect USB and run the included script:
+- Linux / macOS: `./flash.sh`
+- Windows: double-click `flash.bat`
+
+It checks that the device is a Xiaomi Pad 6 (`pipa`), asks you to confirm (userdata is erased), then runs the singleboot commands below.
+
 <details>
   <summary><strong>Singleboot installation</strong></summary>
 
