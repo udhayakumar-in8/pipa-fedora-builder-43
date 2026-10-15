@@ -1,0 +1,50 @@
+name: Build Gnome-only install package
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/bold-hopper-jgiaod
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Free up disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+        sudo docker image prune --all --force || true
+        df -h /
+
+    - name: Build the Builder container
+      run: docker build . -t 'pipa-fedora-builder-43'
+
+    - name: Build the Gnome image
+      run: docker run --privileged -v "$(pwd)"/images:/build/images -v "/dev:/dev" pipa-fedora-builder-43 gnome
+
+    - name: Upload Gnome image
+      uses: actions/upload-artifact@v4
+      with:
+        name: pipa-fedora-45-gnome
+        path: images/*.zip
+        compression-level: 0
+        retention-days: 14
+
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2.6.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: f45-gnome-${{ steps.date.outputs.date }}-${{ github.run_number }}
+        name: Fedora 45 Gnome ${{ steps.date.outputs.date }}
+        files: images/*.zip
+        draft: true

@@ -214,6 +214,11 @@ make_image() {
         arch-chroot $image_mnt find /var/lib/gdm/.config -type f -exec chmod 644 {} \;
         arch-chroot $image_mnt bash -c 'id gdm &>/dev/null && chown -R gdm:gdm /var/lib/gdm/.config || true'
     fi
+    # newer GDM runs the greeter as a dynamic user that reads this path instead
+    if [[ -d "$image_mnt/var/lib/gdm/seat0" ]]; then
+        arch-chroot $image_mnt find /var/lib/gdm/seat0 -type d -exec chmod 755 {} \;
+        arch-chroot $image_mnt find /var/lib/gdm/seat0 -type f -exec chmod 644 {} \;
+    fi
     chmod 644 "$image_mnt/etc/xdg/monitors.xml"
 
     if [[ "$mkosi_profile" == plasma* ]]; then
