@@ -4,6 +4,13 @@
 # ready; restarting iio-sensor-proxy earlier leaves it without an accelerometer
 # and GNOME hides the auto-rotate toggle. Retry until the accelerometer is back.
 
+# keep the tablet awake while recovering, otherwise an idle/locked tablet
+# suspends again mid-recovery and the accelerometer stays gone for hours
+if [[ -z "$PIPA_SENSORS_INHIBITED" ]]; then
+    PIPA_SENSORS_INHIBITED=1 exec systemd-inhibit --what=sleep:idle \
+        --who=pipa-sensors --why="recovering accelerometer" "$0" "$@"
+fi
+
 # only one recovery at a time (resume hook and watchdog can both call this)
 exec 9>/run/pipa-sensors.lock
 flock -n 9 || { echo "sensor recovery already running"; exit 0; }
