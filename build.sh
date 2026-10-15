@@ -128,7 +128,7 @@ install_rustdesk() {
     [[ -n "$url" ]] || return 1
     echo "### Downloading $url"
     curl -fsSL -o "$image_mnt/var/tmp/rustdesk.rpm" "$url" || return 1
-    arch-chroot $image_mnt dnf -y install /var/tmp/rustdesk.rpm
+    arch-chroot $image_mnt dnf -y install desktop-file-utils /var/tmp/rustdesk.rpm
     local rc=$?
     rm -f "$image_mnt/var/tmp/rustdesk.rpm"
     return $rc
