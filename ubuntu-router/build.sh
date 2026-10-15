@@ -74,7 +74,11 @@ do_umount() {  # unmount everything at or below $1
     local i
     for ((i = ${#MOUNTS[@]} - 1; i >= 0; i--)); do
         if [[ "${MOUNTS[i]}" == "$1" || "${MOUNTS[i]}" == "$1"/* ]]; then
-            umount "${MOUNTS[i]}"
+            # A process that just exited in the chroot can keep a mount busy
+            # for a moment: retry, then detach lazily.
+            umount "${MOUNTS[i]}" 2>/dev/null \
+                || { sleep 2; umount "${MOUNTS[i]}" 2>/dev/null; } \
+                || umount -l "${MOUNTS[i]}"
             unset 'MOUNTS[i]'
         fi
     done
