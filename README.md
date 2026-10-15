@@ -45,8 +45,7 @@ Change these default credentials after installation.
 
 ### Issues (all flavors):
 - Front camera doesnt work, back camera might
-- Sensors may break after suspend, so they are disabled by default. **Auto screen rotation needs them.** Run ```./enable-sensors``` in your home folder to install ```pipa-sensors``` & ```pipa-sensor-restart``` and enable the ```iio-sensor-proxy``` & ```hexagonrpcd-sdsp``` services, then log out and back in
-- To automatically restart the services and fix the sensors, install ```pipa-sensor-restart```. It takes ~10-15s after waking for the sensors to come back online (might not always work)
+- Sensors (accelerometer for auto screen rotation) are enabled by default. They can break after suspend, so the image restarts the ```hexagonrpcd-sdsp``` & ```iio-sensor-proxy``` services after every resume (it takes a few seconds for rotation to come back). Check them with ```monitor-sensor```
 
 ### Tips and Tricks:
 - Run ```widevine-installer``` to install the Widevinde CDM for Firefox and Chromium based browsers, works for system packages only. **(The widevine CDM module is not altered in any way, nor is it preinstalled or distributed by me)**
@@ -55,7 +54,7 @@ Change these default credentials after installation.
 	- The login screen comes pre-rotated. If you change the rotation, apply it to plasmalogin in Settings -> Login Screen -> Apply Plasma Settings...
 	- Auto rotation only runs in tablet mode by default; change it in Settings -> Display & Monitor -> Orientation
 - Gnome Flavor:
-	- Configure the preinstalled Gnome Rotation Extension as manual Rotation toggle
+	- Auto rotation works out of the box. Use the preinstalled Screen Rotate extension for a manual rotation toggle or to force auto rotation while a keyboard is attached
 	- Install the [GJS OSK extension](https://github.com/Vishram1123/gjs-osk) to make the Gnome OSK usable (if your enter key gets stuck, remove it)
 	- Install the [TouchUP extension](https://github.com/mityax/gnome-extension-touchup) to make the Gnome Shell more usable on a Touchscreen
 

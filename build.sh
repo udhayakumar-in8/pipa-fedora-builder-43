@@ -35,8 +35,8 @@ get_de_name() {
             mkosi_profile="custom"
             ;;
         *)
-            echo "### Invalid DE: $de_name, defaulting to KDE Plasma ..."
-            mkosi_profile="plasma"
+            echo "### Invalid DE: $de_name, defaulting to Gnome ..."
+            mkosi_profile="gnome"
             ;;
     esac
 }
@@ -181,6 +181,11 @@ make_image() {
     arch-chroot $image_mnt systemctl enable tuned.service
     # echo "### DEBUG: tuned-ppd.service"
     arch-chroot $image_mnt systemctl enable tuned-ppd.service
+    echo "### Enabling sensors (auto screen rotation)"
+    arch-chroot $image_mnt systemctl enable hexagonrpcd-sdsp.service
+    # iio-sensor-proxy is normally started by udev; enable it too in case it isn't
+    arch-chroot $image_mnt systemctl enable iio-sensor-proxy.service || true
+    chmod 755 "$image_mnt/usr/lib/systemd/system-sleep/pipa-sensors"
     echo "### Setting default systemd target"
     if [[ -n "$mkosi_profile" ]]; then
         arch-chroot "$image_mnt" systemctl set-default graphical.target
@@ -227,7 +232,6 @@ make_image() {
     arch-chroot $image_mnt chsh -s /bin/fish user
     arch-chroot $image_mnt chmod +x /home/user/post-install
     arch-chroot $image_mnt chmod +x /home/user/niri-install
-    arch-chroot $image_mnt chmod +x /home/user/enable-sensors
     
     # echo "### SElinux labeling filesystem"
     # arch-chroot $image_mnt setfiles -F -p -c /etc/selinux/targeted/policy/policy.* -e /proc -e /sys -e /dev /etc/selinux/targeted/contexts/files/file_contexts /

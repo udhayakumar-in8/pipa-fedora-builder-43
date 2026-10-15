@@ -1,0 +1,9 @@
+#!/bin/bash
+# The SDSP sensor hub often doesn't come back after suspend, which breaks
+# auto-rotation. Restart the sensor services after every resume.
+# Runs as a transient unit so systemd-sleep doesn't wait on (or kill) it.
+
+[[ "$1" == "post" ]] || exit 0
+
+systemd-run --no-block --collect --on-active=2 --unit="pipa-sensors-resume-$(date +%s)" \
+    /usr/bin/bash -c 'systemctl restart hexagonrpcd-sdsp.service; sleep 3; systemctl restart iio-sensor-proxy.service'
