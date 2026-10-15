@@ -107,6 +107,11 @@ read_list() {  # print the package names of a .list file
     sed -e 's/#.*//' -e 's/[[:space:]]\+/\n/g' "$1" | sed '/^$/d'
 }
 
+# Random string from CHARSET (no pipefail: head closing the pipe is expected).
+random_str() {  # random_str LENGTH CHARSET
+    (set +o pipefail; LC_ALL=C tr -dc "$2" </dev/urandom | head -c "$1")
+}
+
 # Replace @VAR@ placeholders in a file with the values of the shell variables.
 render() {
     local file="$1" content var
@@ -305,13 +310,15 @@ stage_packages() {
 stage_overlay() {
     log "Applying overlay"
     rsync -rlptD --chown=root:root overlay/ "$ROOTFS/"
+    # Executable bits can get lost (zip downloads, web uploads): set them explicitly.
     local f
     while IFS= read -r -d '' f; do
         f="$ROOTFS/${f#overlay/}"
         if grep -q '@[A-Z_]\+@' "$f"; then render "$f"; fi
     done < <(find overlay -type f -print0)
     chmod 600 "$ROOTFS"/etc/netplan/*.yaml
-    chmod 755 "$ROOTFS"/usr/local/sbin/* "$ROOTFS"/etc/kernel/postinst.d/* "$ROOTFS"/etc/kernel/postrm.d/*
+    chmod 755 "$ROOTFS"/usr/local/sbin/* "$ROOTFS"/etc/kernel/postinst.d/* "$ROOTFS"/etc/kernel/postrm.d/* \
+        "$ROOTFS"/etc/update-motd.d/05-router
 }
 
 stage_system() {
@@ -359,7 +366,7 @@ EOF
     in_chroot "$ROOTFS" useradd -m -s /bin/bash -G sudo,adm,sshusers "$ADMIN_USER"
     local password="$ADMIN_PASSWORD"
     if [[ -z "$password" ]]; then
-        password="$(tr -dc 'A-HJ-NP-Za-km-z2-9' </dev/urandom | head -c 16)"
+        password="$(random_str 16 'A-HJ-NP-Za-km-z2-9')"
         umask 077
         printf 'user: %s\npassword: %s\n(the password must be changed at first login)\n' \
             "$ADMIN_USER" "$password" > "$OUTPUT_DIR/$IMAGE_BASENAME.credentials"
@@ -454,7 +461,7 @@ stage_image() {
     ROOT_DEV="$(loop_part 4)"
     VAR_DEV="$(loop_part 5)"
 
-    ESP_UUID="$(tr -dc 'A-F0-9' </dev/urandom | head -c 8)"
+    ESP_UUID="$(random_str 8 'A-F0-9')"
     ESP_UUID="${ESP_UUID:0:4}-${ESP_UUID:4:4}"
     BOOT_UUID="$(cat /proc/sys/kernel/random/uuid)"
     ROOT_UUID="$(cat /proc/sys/kernel/random/uuid)"
