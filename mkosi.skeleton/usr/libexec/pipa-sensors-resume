@@ -1,0 +1,23 @@
+#!/bin/bash
+# Bring the SDSP sensor hub back after suspend. hexagonrpcd-sdsp needs ~10s
+# (it exits once and is restarted by systemd) before the sensor registry is
+# ready; restarting iio-sensor-proxy earlier leaves it without an accelerometer
+# and GNOME hides the auto-rotate toggle. Retry until the accelerometer is back.
+
+has_accel() {
+    busctl get-property net.hadess.SensorProxy /net/hadess/SensorProxy \
+        net.hadess.SensorProxy HasAccelerometer 2>/dev/null | grep -q true
+}
+
+for attempt in 1 2 3; do
+    systemctl restart hexagonrpcd-sdsp.service
+    sleep 12
+    systemctl restart iio-sensor-proxy.service
+    # iio-sensor-proxy waits 5s (drop-in) and then polls the registry
+    for _ in $(seq 20); do
+        sleep 1
+        has_accel && { echo "accelerometer back (attempt $attempt)"; exit 0; }
+    done
+    echo "accelerometer still missing after attempt $attempt"
+done
+exit 1
