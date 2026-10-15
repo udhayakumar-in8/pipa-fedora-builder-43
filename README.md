@@ -54,7 +54,7 @@ Change these default credentials after installation.
 	- The login screen comes pre-rotated. If you change the rotation, apply it to plasmalogin in Settings -> Login Screen -> Apply Plasma Settings...
 	- Auto rotation only runs in tablet mode by default; change it in Settings -> Display & Monitor -> Orientation
 - Gnome Flavor:
-	- Preinstalled: LibreOffice (Writer, Calc, Impress), Remmina (RDP/VNC), GNOME Terminal, Tilix, Text Editor, Vim, OpenVPN, RustDesk, VLC, Dia, Papers (PDF), GSConnect, nmap, and a C/C++ toolchain (gcc, make, cmake, autotools, gdb). Dark mode is on by default
+	- Preinstalled: LibreOffice (Writer, Calc, Impress), Remmina (RDP/VNC), GNOME Terminal, Tilix, Text Editor, Vim, OpenVPN, RustDesk, VLC, Dia, Papers (PDF), GSConnect, nmap, Wireshark, GParted, Errands, Zenmap (if available for this release), and a C/C++ toolchain (gcc, make, cmake, autotools, gdb). Dark mode is on by default
 	- Waterfox and AnyDesk have no ARM64 Linux builds, so they can't be installed on pipa. Firefox is preinstalled, and RustDesk is preinstalled as the AnyDesk alternative
 	- Auto rotation works out of the box. Use the preinstalled Screen Rotate extension for a manual rotation toggle or to force auto rotation while a keyboard is attached
 	- Install the [GJS OSK extension](https://github.com/Vishram1123/gjs-osk) to make the Gnome OSK usable (if your enter key gets stuck, remove it)

@@ -267,6 +267,8 @@ make_image() {
     arch-chroot $image_mnt useradd -m -G audio,video,wheel "$default_user"
     echo "$default_user:$default_password" | arch-chroot $image_mnt chpasswd
     arch-chroot $image_mnt chsh -s /bin/fish "$default_user"
+    # let the user capture with Wireshark without sudo
+    arch-chroot $image_mnt bash -c "getent group wireshark >/dev/null && usermod -aG wireshark $default_user || true"
     arch-chroot $image_mnt chmod +x "/home/$default_user/post-install"
     arch-chroot $image_mnt chmod +x "/home/$default_user/niri-install"
 
@@ -284,6 +286,11 @@ make_image() {
     done
 
     if [[ "$mkosi_profile" == "gnome" ]]; then
+        # names not confirmed for this release/arch: skip any that don't exist
+        echo "### Installing optional Gnome apps (Errands, Zenmap)"
+        arch-chroot $image_mnt dnf -y install --skip-unavailable errands zenmap nmap-frontend \
+            || echo "### WARNING: optional Gnome apps install failed"
+
         echo "### Installing RustDesk"
         install_rustdesk || echo "### WARNING: RustDesk install failed, skipping"
     fi
