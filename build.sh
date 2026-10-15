@@ -200,6 +200,13 @@ make_image() {
     # echo "### DEBUG: tuned-ppd.service"
     arch-chroot $image_mnt systemctl enable tuned-ppd.service
     echo "### Enabling sensors (auto screen rotation)"
+    # pipa-sensor-restart's resume hook restarts the sensor services 2s after
+    # wake without waiting for the hub, and collides with pipa-sensors-resume
+    # (minutes of restart loops). Remove it and keep dnf from bringing it back.
+    arch-chroot $image_mnt rpm -e --nodeps pipa-sensor-restart 2>/dev/null || true
+    rm -f "$image_mnt/usr/lib/systemd/system-sleep/pipa-sensor-restart"
+    grep -q '^excludepkgs=.*pipa-sensor-restart' "$image_mnt/etc/dnf/dnf.conf" \
+        || echo 'excludepkgs=pipa-sensor-restart' >> "$image_mnt/etc/dnf/dnf.conf"
     arch-chroot $image_mnt systemctl enable hexagonrpcd-sdsp.service
     # iio-sensor-proxy is normally started by udev; enable it too in case it isn't
     arch-chroot $image_mnt systemctl enable iio-sensor-proxy.service || true
