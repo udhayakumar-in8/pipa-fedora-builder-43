@@ -45,14 +45,15 @@ Change these default credentials after installation.
 
 ### Issues (all flavors):
 - Front camera doesnt work, back camera might
-- Sensors may break after suspend, so they are disabled by default. To enable them install ```pipa-sensors``` and enable the ```iio-sensor-proxy``` & ```hexagonrpcd-sdsp``` services
+- Sensors may break after suspend, so they are disabled by default. **Auto screen rotation needs them.** Run ```./enable-sensors``` in your home folder to install ```pipa-sensors``` & ```pipa-sensor-restart``` and enable the ```iio-sensor-proxy``` & ```hexagonrpcd-sdsp``` services, then log out and back in
 - To automatically restart the services and fix the sensors, install ```pipa-sensor-restart```. It takes ~10-15s after waking for the sensors to come back online (might not always work)
 
 ### Tips and Tricks:
 - Run ```widevine-installer``` to install the Widevinde CDM for Firefox and Chromium based browsers, works for system packages only. **(The widevine CDM module is not altered in any way, nor is it preinstalled or distributed by me)**
 - Visit [Pipa Linux Wiki](https://rr1111.github.io/pipa-linux-wiki) for more & general Info
 - KDE Flavors: 
-	- Apply the screen rotation to plasmalogin in Settings -> Login Screen -> Apply Plasma Settings...
+	- The login screen comes pre-rotated. If you change the rotation, apply it to plasmalogin in Settings -> Login Screen -> Apply Plasma Settings...
+	- Auto rotation only runs in tablet mode by default; change it in Settings -> Display & Monitor -> Orientation
 - Gnome Flavor:
 	- Configure the preinstalled Gnome Rotation Extension as manual Rotation toggle
 	- Install the [GJS OSK extension](https://github.com/Vishram1123/gjs-osk) to make the Gnome OSK usable (if your enter key gets stuck, remove it)

@@ -202,8 +202,24 @@ make_image() {
     echo "### Setting permission"
     arch-chroot $image_mnt find /etc/skel -type d -exec chmod 755 {} \;
     arch-chroot $image_mnt find /etc/skel -type f -exec chmod 644 {} \;
-    arch-chroot $image_mnt find /var/lib/gdm -type d -exec chmod 744 {} \;
-    arch-chroot $image_mnt find /var/lib/gdm -type f -exec chmod 644 {} \;
+    # dirs need the execute bit, and the files must belong to the greeter user,
+    # otherwise the login screen can't read its rotated monitor config
+    if [[ -d "$image_mnt/var/lib/gdm/.config" ]]; then
+        arch-chroot $image_mnt find /var/lib/gdm/.config -type d -exec chmod 755 {} \;
+        arch-chroot $image_mnt find /var/lib/gdm/.config -type f -exec chmod 644 {} \;
+        arch-chroot $image_mnt bash -c 'id gdm &>/dev/null && chown -R gdm:gdm /var/lib/gdm/.config || true'
+    fi
+    chmod 644 "$image_mnt/etc/xdg/monitors.xml"
+
+    if [[ "$mkosi_profile" == plasma* ]]; then
+        echo "### Applying screen rotation to the Plasma login screen"
+        arch-chroot $image_mnt bash -c '
+            home=$(getent passwd plasmalogin | cut -d: -f6)
+            [[ -n "$home" ]] || exit 0
+            install -d -m 755 -o plasmalogin -g plasmalogin "$home/.config"
+            install -m 644 -o plasmalogin -g plasmalogin /etc/skel/.config/kwinoutputconfig.json "$home/.config/kwinoutputconfig.json"
+        '
+    fi
 
     echo "### Creating default user and setting fish as their shell"
     arch-chroot $image_mnt useradd -m -G audio,video,wheel user
@@ -211,6 +227,7 @@ make_image() {
     arch-chroot $image_mnt chsh -s /bin/fish user
     arch-chroot $image_mnt chmod +x /home/user/post-install
     arch-chroot $image_mnt chmod +x /home/user/niri-install
+    arch-chroot $image_mnt chmod +x /home/user/enable-sensors
     
     # echo "### SElinux labeling filesystem"
     # arch-chroot $image_mnt setfiles -F -p -c /etc/selinux/targeted/policy/policy.* -e /proc -e /sys -e /dev /etc/selinux/targeted/contexts/files/file_contexts /
