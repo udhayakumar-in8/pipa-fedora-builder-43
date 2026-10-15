@@ -271,6 +271,12 @@ make_image() {
     done
 
     if [[ "$mkosi_profile" == "gnome" ]]; then
+        # packages that may be missing for this release/arch: skip instead of failing the build
+        echo "### Installing optional Gnome apps"
+        arch-chroot $image_mnt dnf -y install --skip-unavailable \
+            vlc dia papers gnome-shell-extension-gsconnect \
+            || echo "### WARNING: optional Gnome apps install failed"
+
         echo "### Installing RustDesk"
         install_rustdesk || echo "### WARNING: RustDesk install failed, skipping"
     fi
