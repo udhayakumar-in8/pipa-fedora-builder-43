@@ -33,7 +33,7 @@ and flashes it to a disk.
 On an Ubuntu/Debian build host:
 
 ```bash
-sudo apt install debootstrap gdisk util-linux e2fsprogs dosfstools rsync zstd
+sudo apt install debootstrap gdisk util-linux e2fsprogs dosfstools rsync mtools zstd
 cd ubuntu-router
 
 # optional: your settings + SSH key

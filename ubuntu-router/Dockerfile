@@ -7,7 +7,7 @@ FROM ubuntu:22.04
 
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        debootstrap gdisk util-linux e2fsprogs dosfstools rsync zstd xz-utils \
+        debootstrap gdisk util-linux e2fsprogs dosfstools rsync mtools zstd xz-utils \
         ca-certificates git \
  && rm -rf /var/lib/apt/lists/*
 

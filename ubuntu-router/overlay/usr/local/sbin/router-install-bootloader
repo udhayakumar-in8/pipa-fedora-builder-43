@@ -24,7 +24,10 @@ fi
 [[ -z "$boot_uuid" ]] && boot_uuid="$(findmnt -no UUID /boot)"
 [[ -b "$disk" ]] || { echo "not a block device: $disk" >&2; exit 1; }
 [[ -n "$boot_uuid" ]] || { echo "cannot determine /boot UUID" >&2; exit 1; }
-mountpoint -q /boot/efi || { echo "/boot/efi is not mounted" >&2; exit 1; }
+# The image build fills the ESP from the /boot/efi directory afterwards.
+if [[ -z "${ROUTER_BUILD:-}" ]] && ! mountpoint -q /boot/efi; then
+    echo "/boot/efi is not mounted" >&2; exit 1
+fi
 
 echo "Installing GRUB on $disk (/boot UUID $boot_uuid)"
 

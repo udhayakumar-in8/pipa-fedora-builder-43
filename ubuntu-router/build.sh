@@ -192,12 +192,12 @@ load_config() {
 preflight() {
     [[ $EUID -eq 0 ]] || die "run as root (sudo $0)"
     local tool missing=()
-    for tool in debootstrap sgdisk partx losetup rsync mount chroot; do
+    for tool in debootstrap sgdisk partx losetup rsync mount chroot mcopy; do
         command -v "$tool" >/dev/null || missing+=("$tool")
     done
     [[ "$COMPRESS" == zstd ]] && ! command -v zstd >/dev/null && missing+=(zstd)
     [[ "$COMPRESS" == xz ]]   && ! command -v xz   >/dev/null && missing+=(xz)
-    [[ ${#missing[@]} -eq 0 ]] || die "missing tools: ${missing[*]} (apt install debootstrap gdisk util-linux rsync zstd xz-utils)"
+    [[ ${#missing[@]} -eq 0 ]] || die "missing tools: ${missing[*]} (apt install debootstrap gdisk util-linux rsync mtools zstd xz-utils)"
     [[ -e "$IMAGE" ]] && die "image already exists: $IMAGE (use another --version)"
 
     log "Building $IMAGE_BASENAME"
@@ -493,12 +493,11 @@ EOF
     do_mount "$ROOT_DEV" "$MNT"
     mkdir -p "$MNT/boot" "$MNT/var"
     do_mount "$BOOT_DEV" "$MNT/boot"
-    mkdir -p "$MNT/boot/efi"
-    do_mount "$ESP_DEV" "$MNT/boot/efi"
+    mkdir -p "$MNT/boot/efi"   # ESP is filled with mtools later (no vfat kernel module needed)
     do_mount "$VAR_DEV" "$MNT/var"
     rsync -aHAX --info=stats1 "$ROOTFS/" "$MNT/"
     rm -rf "$MNT/var/lost+found" "$MNT/boot/lost+found"
-    df -h "$MNT" "$MNT/boot" "$MNT/boot/efi" "$MNT/var" | sed 's/^/    /'
+    df -h "$MNT" "$MNT/boot" "$MNT/var" | sed 's/^/    /'
 }
 
 stage_bootloader() {
@@ -518,6 +517,10 @@ stage_bootloader() {
     done
 
     in_chroot "$MNT" /usr/local/sbin/router-install-bootloader "$DISK_LOOP" "$BOOT_UUID"
+    # Move the EFI files from the /boot/efi directory into the ESP.
+    MTOOLS_SKIP_CHECK=1 mcopy -s -o -i "$ESP_DEV" "$MNT"/boot/efi/* ::/
+    MTOOLS_SKIP_CHECK=1 mdir -/ -i "$ESP_DEV" ::/ | sed -n 's/^/    /p' | grep -i 'efi' || true
+    rm -rf "${MNT:?}"/boot/efi/*
     in_chroot "$MNT" update-initramfs -u -k all
     in_chroot "$MNT" update-grub
     grep -q "root=UUID=$ROOT_UUID" "$MNT/boot/grub/grub.cfg" || die "grub.cfg does not boot root=UUID=$ROOT_UUID"
