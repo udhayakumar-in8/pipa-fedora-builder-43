@@ -28,4 +28,4 @@ fastboot reboot
 
 echo
 echo "Done. First boot takes a minute or two (the root filesystem is resized)."
-echo "Login: udhayakumar / 147147 - change it after setup."
+echo "Login: udhayakumar / 147147 - you will be asked to set a new password."

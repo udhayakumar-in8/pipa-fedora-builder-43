@@ -13,3 +13,7 @@ disable-extension-version-validation=true
 # can't type the password on the tablet without a physical keyboard
 [org.gnome.desktop.a11y.applications]
 screen-keyboard-enabled=true
+
+# Auto-rotate on by default (Quick Settings toggle)
+[org.gnome.settings-daemon.peripherals.touchscreen]
+orientation-lock=false

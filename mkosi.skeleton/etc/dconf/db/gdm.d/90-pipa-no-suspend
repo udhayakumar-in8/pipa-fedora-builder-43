@@ -1,0 +1,5 @@
+# Don't suspend at the login screen: the SDSP sensor hub often doesn't come
+# back from suspend, so the tablet would be stuck in one orientation at login.
+[org/gnome/settings-daemon/plugins/power]
+sleep-inactive-ac-type='nothing'
+sleep-inactive-battery-type='nothing'

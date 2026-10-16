@@ -49,6 +49,17 @@ jobs:
         done
         ls -l release
 
+    - name: Delete old Gnome draft releases (keep the newest one)
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh api "repos/${{ github.repository }}/releases" --paginate \
+          --jq '[.[] | select(.draft and (.name | startswith("Fedora 45 Gnome")))] | sort_by(.created_at) | reverse | .[1:] | .[].id' |
+        while read -r id; do
+          echo "Deleting old draft release $id"
+          gh api -X DELETE "repos/${{ github.repository }}/releases/$id"
+        done
+
     - name: Get current date
       id: date
       run: echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
@@ -62,5 +73,8 @@ jobs:
         files: release/*
         draft: true
         body: |
+          Flash with `flash.sh` (Linux/macOS) or `flash.bat` (Windows) from the unzipped folder.
+          `build-report.txt` in the zip lists what was verified in this image.
+
           If the image is split into `.zip.00`, `.zip.01`, ... join the parts first:
           `cat *.zip.?? > image.zip` (Linux/macOS) or `copy /b file.zip.00+file.zip.01 image.zip` (Windows), then unzip.

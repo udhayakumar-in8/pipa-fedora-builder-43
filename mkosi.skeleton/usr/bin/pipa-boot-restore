@@ -1,0 +1,15 @@
+#!/bin/bash
+# Show how to get back to a bootable kernel if a kernel update breaks boot.
+# Kernel updates flash the boot partition directly, so keep a copy around.
+echo "Boot images on this tablet:"
+ls -lh /boot/pipa-known-good/boot.img /boot/boot-*.img 2>/dev/null
+cat <<'TXT'
+
+If the tablet no longer boots after a kernel update:
+  1. Copy one of the files above to your PC (from a working boot, or from the
+     original image zip: boot.img).
+     /boot/pipa-known-good/boot.img is the kernel this image shipped with.
+  2. Hold Volume Down + Power to enter fastboot, connect USB, then on the PC:
+       fastboot flash boot_ab boot.img
+       fastboot reboot
+TXT

@@ -1,0 +1,27 @@
+#!/bin/bash
+# Collect everything needed to debug this tablet into one file.
+# Usage: pipa-doctor            (writes ~/pipa-doctor-<date>.txt)
+out="$HOME/pipa-doctor-$(date +%Y%m%d-%H%M%S).txt"
+uid=$(id -u "${SUDO_USER:-$USER}")
+export DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$uid/bus}
+s() { echo; echo "===== $* ====="; }
+{
+s system;        uname -r; cat /etc/fedora-release; uptime
+s packages;      rpm -q kernel-core iio-sensor-proxy hexagonrpc libssc pipa-sensors pipa-sensor-restart mutter gnome-shell 2>&1
+s accelerometer; busctl get-property net.hadess.SensorProxy /net/hadess/SensorProxy net.hadess.SensorProxy HasAccelerometer 2>&1
+                 udevadm info /dev/fastrpc-sdsp 2>&1 | grep -E 'IIO_SENSOR_PROXY_TYPE|ACCEL_MOUNT'
+s rotation;      gsettings get org.gnome.settings-daemon.peripherals.touchscreen orientation-lock 2>&1
+                 gdbus introspect --session --dest org.gnome.Mutter.DisplayConfig --object-path /org/gnome/Mutter/DisplayConfig --only-properties 2>&1 | grep -i PanelOrientationManaged
+                 gdctl show 2>&1 | head -n 20
+s input-devices; libinput list-devices 2>/dev/null | grep -E '^Device|Capabilities' || echo "(run with sudo for input devices)"
+s sensor-services
+                 systemctl status --no-pager -n 0 hexagonrpcd-sdsp iio-sensor-proxy pipa-sensors-monitor 2>&1 | grep -E '●|Active:'
+                 systemctl is-enabled pipa-sensors-watchdog.timer 2>&1
+s sensor-log;    journalctl -b --no-pager 2>&1 | grep -iE 'pipa-sensor|iio-sensor-proxy|hexagonrpcd' | grep -v temp.json | tail -n 40
+s suspend;       journalctl -b --no-pager 2>&1 | grep -iE 'suspend|resume' | tail -n 10
+s network;       nmcli -t device status 2>&1; ip -br addr 2>&1
+s battery;       upower -i "$(upower -e | grep -m1 battery)" 2>&1 | grep -E 'state|percentage|capacity|energy-full:'
+s errors;        journalctl -b -p err --no-pager 2>&1 | grep -v temp.json | tail -n 40
+s disk;          df -h / /boot 2>&1
+} > "$out" 2>&1
+echo "Saved: $out"

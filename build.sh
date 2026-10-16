@@ -120,18 +120,60 @@ elif [[ $1 == 'umount' ]] || [[ $1 == 'unmount' ]]; then
 fi
 
 # RustDesk isn't in the Fedora repos; install the aarch64 RPM from its latest GitHub release
+# Pinned version + checksum: the RPM isn't GPG-signed, so never install
+# whatever "latest" happens to be. Bump both together when updating.
+rustdesk_version='1.5.0'
+rustdesk_sha256='1b436234e51ca59bfd3beba6ba81096be13a22a7e2f8b94bd45218b8c77e5e13'
 install_rustdesk() {
-    local url
-    url=$(curl -fsSL https://api.github.com/repos/rustdesk/rustdesk/releases/latest \
-        | grep -o '"browser_download_url": *"[^"]*aarch64\.rpm"' \
-        | grep -v suse | head -1 | cut -d'"' -f4)
-    [[ -n "$url" ]] || return 1
+    local url="https://github.com/rustdesk/rustdesk/releases/download/${rustdesk_version}/rustdesk-${rustdesk_version}-0.aarch64.rpm"
     echo "### Downloading $url"
     curl -fsSL -o "$image_mnt/var/tmp/rustdesk.rpm" "$url" || return 1
+    echo "${rustdesk_sha256}  $image_mnt/var/tmp/rustdesk.rpm" | sha256sum -c - || {
+        echo "### ERROR: RustDesk checksum mismatch"; rm -f "$image_mnt/var/tmp/rustdesk.rpm"; return 1; }
     arch-chroot $image_mnt dnf -y install /var/tmp/rustdesk.rpm
     local rc=$?
     rm -f "$image_mnt/var/tmp/rustdesk.rpm"
     return $rc
+}
+
+# Check the finished root filesystem so a silently failed step shows up as a
+# failed build (critical) or a warning in build-report.txt (optional).
+verify_image() {
+    local report="$image_dir/$image_name/build-report.txt" fail=0
+    check() {  # check <critical|optional> <description> <command...>
+        local level=$1 desc=$2; shift 2
+        if "$@" >/dev/null 2>&1; then echo "OK       $desc"
+        elif [[ $level == critical ]]; then echo "FAILED   $desc"; fail=1
+        else echo "MISSING  $desc (optional)"; fi
+    }
+    rpmq() { arch-chroot $image_mnt rpm -q "$@"; }
+    enabled() { arch-chroot $image_mnt systemctl is-enabled "$1"; }
+    {
+        echo "Build report: $image_name"
+        check critical "user $default_user exists"          arch-chroot $image_mnt id "$default_user"
+        check critical "boot image built"                   compgen -G "$image_mnt/boot/boot-*.img"
+        check critical "known-good boot image saved"        test -s "$image_mnt/boot/pipa-known-good/boot.img"
+        check critical "NetworkManager enabled"             enabled NetworkManager.service
+        check critical "sshd enabled"                       enabled sshd.service
+        check critical "root SSH login disabled"            test -f "$image_mnt/etc/ssh/sshd_config.d/50-pipa.conf"
+        if [[ "$mkosi_profile" == gnome ]]; then
+            check critical "gdm enabled"                        enabled gdm.service
+            check critical "sensor packages"                    rpmq iio-sensor-proxy pipa-sensors hexagonrpc libssc
+            check critical "pipa-sensor-restart removed"        bash -c "! arch-chroot $image_mnt rpm -q pipa-sensor-restart"
+            check critical "accelerometer udev rule"            test -f "$image_mnt/etc/udev/rules.d/99-pipa-accel.rules"
+            check critical "hexagonrpcd-sdsp enabled"           enabled hexagonrpcd-sdsp.service
+            check critical "sensor monitor enabled"             enabled pipa-sensors-monitor.service
+            check critical "sensor boot check enabled"          enabled pipa-sensors-watchdog.timer
+            check critical "resume hook installed"              test -x "$image_mnt/usr/lib/systemd/system-sleep/pipa-sensors"
+            check critical "pipa-doctor installed"              test -x "$image_mnt/usr/bin/pipa-doctor"
+            check critical "GSettings defaults compiled"        grep -q orientation-lock "$image_mnt/usr/share/glib-2.0/schemas/90-pipa-defaults.gschema.override"
+            check optional "RustDesk"                           rpmq rustdesk
+            check optional "LibreOffice / VLC / Wireshark / GParted" rpmq libreoffice-writer vlc wireshark gparted
+            check optional "GSConnect / Papers / Dia / Remmina" rpmq gnome-shell-extension-gsconnect papers dia remmina
+        fi
+    } > "$report"
+    cat "$report"
+    if (( fail )); then echo "### ERROR: image verification failed, see $report"; exit 1; fi
 }
 
 make_image() {
@@ -184,6 +226,11 @@ make_image() {
     local kernel_path="$(arch-chroot $image_mnt bash -c 'find /usr/lib/modules/* -maxdepth 0 -type d')"
     arch-chroot $image_mnt kernel-install add "$(basename "$kernel_path")" "${kernel_path}/vmlinuz" --verbose
 
+    # kernel updates flash the boot partition directly; keep the shipped boot
+    # image so a bad update can be undone with fastboot (see pipa-boot-restore)
+    mkdir -p "$image_mnt/boot/pipa-known-good"
+    cp "$(ls $image_mnt/boot/boot-*.img | head -n1)" "$image_mnt/boot/pipa-known-good/boot.img"
+
     echo "### Enabling system services"
     # echo "### DEBUG: NetworkManager.service"
     arch-chroot $image_mnt systemctl enable NetworkManager.service
@@ -217,7 +264,7 @@ make_image() {
     chmod 755 "$image_mnt/usr/libexec/pipa-sensors-monitor"
     arch-chroot $image_mnt systemctl enable pipa-sensors-watchdog.timer
     arch-chroot $image_mnt systemctl enable pipa-sensors-monitor.service
-    chmod 755 "$image_mnt/usr/bin/pipa-sensor-check"
+    chmod 755 "$image_mnt/usr/bin/pipa-sensor-check" "$image_mnt/usr/bin/pipa-doctor" "$image_mnt/usr/bin/pipa-boot-restore"
     echo "### Setting default systemd target"
     if [[ -n "$mkosi_profile" ]]; then
         arch-chroot "$image_mnt" systemctl set-default graphical.target
@@ -269,12 +316,21 @@ make_image() {
     arch-chroot $image_mnt chsh -s /bin/fish "$default_user"
     # let the user capture with Wireshark without sudo
     arch-chroot $image_mnt bash -c "getent group wireshark >/dev/null && usermod -aG wireshark $default_user || true"
+    # the default passwords are published in the README: make both expire so
+    # they must be changed at first login (GDM and SSH both prompt for it)
+    arch-chroot $image_mnt chage -d 0 "$default_user"
+    arch-chroot $image_mnt chage -d 0 root
     arch-chroot $image_mnt chmod +x "/home/$default_user/post-install"
     arch-chroot $image_mnt chmod +x "/home/$default_user/niri-install"
 
     if [[ -d "$image_mnt/usr/share/glib-2.0/schemas" ]]; then
         echo "### Compiling GSettings schemas (dark mode default)"
         arch-chroot $image_mnt glib-compile-schemas /usr/share/glib-2.0/schemas
+    fi
+
+    if [[ -d "$image_mnt/etc/dconf/db/gdm.d" ]] && [[ -x "$image_mnt/usr/bin/dconf" ]]; then
+        echo "### Updating dconf databases (login screen settings)"
+        arch-chroot $image_mnt dconf update
     fi
 
     # some packaged extensions (e.g. screen-rotate) ship schemas/ without
@@ -286,11 +342,6 @@ make_image() {
     done
 
     if [[ "$mkosi_profile" == "gnome" ]]; then
-        # names not confirmed for this release/arch: skip any that don't exist
-        echo "### Installing optional Gnome apps (Errands, Zenmap)"
-        arch-chroot $image_mnt dnf -y install --skip-unavailable errands zenmap nmap-frontend \
-            || echo "### WARNING: optional Gnome apps install failed"
-
         echo "### Installing RustDesk"
         install_rustdesk || echo "### WARNING: RustDesk install failed, skipping"
     fi
@@ -298,6 +349,8 @@ make_image() {
     # echo "### SElinux labeling filesystem"
     # arch-chroot $image_mnt setfiles -F -p -c /etc/selinux/targeted/policy/policy.* -e /proc -e /sys -e /dev /etc/selinux/targeted/contexts/files/file_contexts /
     # arch-chroot $image_mnt setfiles -F -p -c /etc/selinux/targeted/policy/policy.* -e /proc -e /sys -e /dev /etc/selinux/targeted/contexts/files/file_contexts /boot
+
+    verify_image
 
     ###### post-install cleanup ######
     echo -e '\n### Cleanup'

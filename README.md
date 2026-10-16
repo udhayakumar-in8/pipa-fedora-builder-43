@@ -41,20 +41,23 @@
   - Username: `root`
   - Password: `fedora`
 
-Change these default credentials after installation.
+Both passwords expire immediately: you're asked to choose a new one at the first login (login screen, console or SSH). Root login over SSH is disabled.
 
 ### Issues (all flavors):
 - Front camera doesnt work, back camera might
 - Sensors (accelerometer for auto screen rotation) are enabled by default. They can break after suspend, so the image restarts the ```hexagonrpcd-sdsp``` & ```iio-sensor-proxy``` services after every resume (it takes ~20s for rotation to come back). The accelerometer is checked once after boot, ~15s after each resume, and whenever iio-sensor-proxy reports it lost (```pipa-sensors-monitor```, event-driven via D-Bus, no polling); the sensors are restarted only if it's missing, giving up after 5 failed tries until reboot. Check them with ```sudo monitor-sensor``` (without sudo it only works from a terminal on the tablet itself, not over SSH). If it says *No accelerometer*, run ```pipa-sensor-check > sensors.txt``` and share the file
 
 ### Tips and Tricks:
+- Something not working? Run ```pipa-doctor``` and share the file it writes - it collects sensors, rotation, network, battery and recent errors
+- A kernel update broke boot? Run ```pipa-boot-restore``` (or flash ```boot.img``` from the image zip): the shipped kernel is kept in ```/boot/pipa-known-good/boot.img```
+- Errands and Zenmap aren't packaged for Fedora 45: ```flatpak install flathub io.github.mrvladus.List org.nmap.Zenmap```
 - Run ```widevine-installer``` to install the Widevinde CDM for Firefox and Chromium based browsers, works for system packages only. **(The widevine CDM module is not altered in any way, nor is it preinstalled or distributed by me)**
 - Visit [Pipa Linux Wiki](https://rr1111.github.io/pipa-linux-wiki) for more & general Info
 - KDE Flavors: 
 	- The login screen comes pre-rotated. If you change the rotation, apply it to plasmalogin in Settings -> Login Screen -> Apply Plasma Settings...
 	- Auto rotation only runs in tablet mode by default; change it in Settings -> Display & Monitor -> Orientation
 - Gnome Flavor:
-	- Preinstalled: LibreOffice (Writer, Calc, Impress), Remmina (RDP/VNC), GNOME Terminal, Tilix, Text Editor, Vim, OpenVPN, RustDesk, VLC, Dia, Papers (PDF), GSConnect, nmap, Wireshark, GParted, Errands, Zenmap (if available for this release), and a C/C++ toolchain (gcc, make, cmake, autotools, gdb). Dark mode is on by default
+	- Preinstalled: LibreOffice (Writer, Calc, Impress), Remmina (RDP/VNC), GNOME Terminal, Tilix, Text Editor, Vim, OpenVPN, RustDesk, VLC, Dia, Papers (PDF), GSConnect, nmap, Wireshark, GParted and a C/C++ toolchain (gcc, make, cmake, autotools, gdb). Dark mode is on by default
 	- Waterfox and AnyDesk have no ARM64 Linux builds, so they can't be installed on pipa. Firefox is preinstalled, and RustDesk is preinstalled as the AnyDesk alternative
 	- Auto rotation works out of the box. Use the preinstalled Screen Rotate extension for a manual rotation toggle or to force auto rotation while a keyboard is attached
 	- Install the [GJS OSK extension](https://github.com/Vishram1123/gjs-osk) to make the Gnome OSK usable (if your enter key gets stuck, remove it)
